@@ -1,0 +1,30 @@
+NCHG cartesian-product -c hg38.chrom.sizes cons5_seg_genome.txt > cons5_seg_genome.bedpe
+
+NCHG expected sample.mcool --resolution 50000 --output sample_cis.h5  --cis-only
+NCHG expected sample.mcool --resolution 1000000 --output sample_trans.h5 --trans-only
+
+NCHG compute sample.mcool --resolution 50000 --domains cons5_seg_genome.bedpe --expected-values=sample_cis.h5 compute/sample_cis_50kbp --cis-only
+NCHG compute sample.mcool --resolution 1000000 --domains cons5_seg_genome.bedpe --expected-values=sample_trans.h5 compute/sample_trans_1mbp --trans-only
+
+NCHG merge compute/sample_cis_50kbp parquet/sample_cis_50kbp.parquet
+NCHG merge compute/sample_trans_50kbp parquet/sample_trans_50kbp.parquet
+
+NCHG filter parquet/sample_cis_50kbp.parquet parquet/sample_cis_50kbp_fdr0.01_lr1.5.parquet --fdr=0.01 --log-ratio=1.5
+NCHG filter parquet/sample_trans_1mbp.parquet parquet/sample_trans_1mbp_fdr0.01_lr1.5.parquet --fdr=0.01 --log-ratio=1.5
+
+
+NCHG view parquet/sample_cis_50kbp_fdr0.01_lr1.5.parquet --no-write-header > sig_interactions/sample_cis_50kbp_fdr0.01_lr1.5.tsv
+NCHG view parquet/sample_trans_1mbp_fdr0.01_lr1.5.parquet --no-write-header > sig_interactions/sample_trans_1mbp_fdr0.01_lr1.5.tsv
+
+#creates Condition_cons2.gtrack in the working directory
+./interactions_to_gtrack.sh Condition_cons2_fdr0.01_lr_cis2_trans1.5.bed resolution cons5_seg_genome.txt
+
+for i in {1..100}
+do
+./Chrom3D -o Condition_$i.cmm \
+                -n 2000000 \
+                -l 1000 \
+                -s $RANDOM \
+                -y 0.15 \
+                Condition_cons2.gtrack 2> Condition_$i.log &
+done
