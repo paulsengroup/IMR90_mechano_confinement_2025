@@ -1,0 +1,34 @@
+https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/p14/hg38.p14.fa.gz
+https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/p14/hg38.p14.chrom.sizes
+
+samtools faidx hg38.p14.fa chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9 chr10 chr11 chr12 chr13 chr14 chr15 chr16 chr17 chr18 chr19 chr20 chr21 chr22 chrX chrY > hg38.p14_selected.fa
+
+nextflow run nf-core/hic -r 2.1.0  \
+  --input conf_samplesheet.csv  \
+  --outdir output_dir \
+  --fasta hg38.p14_selected.fa \
+  --chromosome_size hg38.p14.chrom.sizes \
+  -c config_file.txt \
+  --restriction_site '^GATC,G^ANTC,C^TNAG,T^TAA' \
+  --ligation_site 'CTNAANTC,CTNAGATC,CTNATAA,CTNATNAG,GANTANTC,GANTGATC,GANTTAA,GANTTNAG,GATCANTC,GATCGATC,GATCTAA,GATCTNAG,TTAANTC,TTAGATC,TTATAA,TTATNAG' \
+  --bwt2_opts_end2end '--trim5 5 --very-sensitive -L 30 --score-min L,-0.6,-0.2 --end-to-end --reorder' \
+  --bwt2_opts_trimmed '--trim5 5 --very-sensitive -L 30 --score-min L,-0.6,-0.2 --end-to-end --reorder'
+
+xz -dcf pairs/input_file.allValidPairs.xz |
+        cooler cload pairs \
+            hg38.p14.chrom.sizes:1000 \
+            -                            \
+            output_file.1000.cool  \
+            --chrom1 2 --pos1 3          \
+            --chrom2 5 --pos2 6          \
+            --assembly=hg38 
+
+cooler merge merged.1000.cool REP1.1000.cool REP2.1000.cool REP3.1000.cool
+cooler zoomify -r 1000,2000,5000,10000,20000,50000,100000,200000,500000,1000000,2000000,5000000,10000000 -p 30 input_file.1000.cool -o output_file.mcool
+
+for res in 1000 2000 5000 10000 20000 50000 100000 200000 500000 1000000 2000000 5000000 10000000; do
+  cooler balance -p 30 cooler_file.mcool::/resolutions/$res
+done
+
+#cooler_apply_normalization.py script from  https://github.com/paulsengroup/2022-mcf10a-cancer-progression/bin/cooler_apply_normalization.py
+python cooler_apply_normalization.py cooler_file.mcool::/resolutions/50000 --output-name cooler_file_50kbp_normalized.cool
