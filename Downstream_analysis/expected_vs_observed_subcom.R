@@ -12,25 +12,12 @@ sub_com$count = sub_com$count*5000/1000000
 agg_tbl_matri = xtabs(count ~ A + B, sub_com)
 agg_tbl_matri = agg_tbl_matri[c(8, 7, 6, 5, 1:4), c(8, 7, 6, 5, 1:4)]
 
+#Plot
+pheatmap(agg_tbl_matri, main = "", cluster_rows = FALSE, cluster_cols = FALSE, angle_col = 0
+         ,fontsize = 12, display_numbers = round(agg_tbl_matri, digits = 3)) 
 
-#subcom share in C
-a = rowSums(agg_tbl_matri)/sum(rowSums(agg_tbl_matri))
-#subcom share in NC
-b = colSums(agg_tbl_matri)/sum(colSums(agg_tbl_matri))
+setHook("grid.newpage", NULL, "replace")
+grid.text("NC", y=-0.02, gp=gpar(fontsize=16))
+grid.text("C", x=-0.02, rot=90, gp=gpar(fontsize=16))
 
-#Calculating the expected matrix based on subcompartment share in each condition
-matrix = c()
-for(value1 in a){
-  row = c()
-  for(value2 in b){
-    row = append(row, value1*value2)
-  }
-  matrix = append(matrix, row)
-}
-matrix = matrix(matrix, nrow = 8, ncol=8)
-rownames(matrix) = rownames(agg_tbl_matri) 
-colnames(matrix) = colnames(agg_tbl_matri)
-#Calculating the share of each subcompartment NC vs. C from the observed matrix 
-obs = agg_tbl_matri/sum(agg_tbl_matri)
-#log2 subcompartment matrix NC vs C, observed/expected matrix
-ods = log2(obs/matrix)
+
