@@ -1,0 +1,4 @@
+nextflow run nf-core/rnaseq -r 3.10.1 --input input/samplesheet_all_samples.csv \
+--outdir output --fasta input/GRCh38.primary_assembly.genome.fa \
+--gtf input/gencode.v43.annotation.gtf -profile singularity --gencode \
+--pseudo_aligner salmon
